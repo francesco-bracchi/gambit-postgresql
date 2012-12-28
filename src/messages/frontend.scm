@@ -1,43 +1,51 @@
 (##namespace ("postgresql/messages/frontend#"))
 (##include "~~lib/gambit#.scm")
+
 (include "io#.scm")
-
-(define bind                    #\B)
-(define close                   #\C)
-(define copy-data               #\d)
-(define copy-done               #\b)
-(define copy-fail               #\f)
-(define describe                #\D)
-(define execute                 #\E)
-(define flush                   #\H)
-(define function-call           #\F)
-(define parse                   #\P)
-(define password-message        #\p)
-(define query                   #\Q)
-(define sync                    #\S)
-(define terminate               #\X)
-
-(define (send-message-raw type body #!optional (port (current-output-port)))
-  (write-u8 type port)
-  (write-u8 (+ 5 (u8vector-length body)) port)
-  (send-bytes body port)
-  (force-output port))
 
 (define-macro (lo) (char->integer #\0))
 
 (define-macro (hi) (+ 1 (char->integer #\z)))
 
-(define *message-writers* (make-vector (- (hi) (lo))))
+
+(define-macro (define-tag name char)
+  `(define ,name ,(char->integer char)))
+
+(define-tag bind                    #\B)
+(define-tag close                   #\C)
+(define-tag copy-data               #\d)
+(define-tag copy-done               #\b)
+(define-tag copy-fail               #\f)
+(define-tag describe                #\D)
+(define-tag execute                 #\E)
+(define-tag flush                   #\H)
+(define-tag function-call           #\F)
+(define-tag parse                   #\P)
+(define-tag password                #\p)
+(define-tag query-message           #\Q)
+(define-tag sync                    #\S)
+(define-tag terminate               #\X)
+
+(define current-writer-port (make-parameter (current-output-port)))
+
+(define (send-message-raw type body #!optional (port (current-output-port)))
+  (write-u8 type port)
+  (send-int32 (+ 4 (u8vector-length body)) port)
+  (send-bytes body port)
+  (force-output port))
+
+(define *message-writers* (make-vector (- (hi) (lo)) (lambda _ (raise "undefined writer"))))
 
 (define (message-writer type)
-  (vector-ref *message-writers* (+ (lo) type)))
+  (vector-ref *message-writers* (- type (lo))))
 
 (define-macro (define-message-writer header . body)
   (let* ((key (car header))
 	 (formals (cdr header)))
-    `(vector-set! *message-writers*  
-		  (- (char->integer ,key) (lo))
-		  (lambda ,formals ,@body))))
+    `(begin
+       (vector-set! *message-writers* 
+		    (- ,key (lo))
+		    (lambda ,formals ,@(if (null? body) '(u8vector) body))))))
 
 ;; (send-message (bind a b c))
 ;; (send-message (bind a b c) port)
@@ -78,13 +86,13 @@
     (send-bytes value port))
    (else (error "wrong value, must be u8vector or null"))))
 
-(define (send-type type)
+(define (send-type type #!optional (port (current-output-port)))
   (send-char (cond
 	      ((eq? type 'statement) #\s)
 	      ((eq? type 'portal) #\p)
 	      (else (error "unknown close type" type)))
 	     port))
-  
+
 (define-message-writer (bind portal source bindings results)
     (send-string portal)
     (send-string source)
@@ -97,8 +105,8 @@
   (send-type type)
   (send-string name))
 
-(define-message-writer (copy-data data port)
-  (send-bytes data port))
+(define-message-writer (copy-data data)
+  (send-bytes data))
 
 (define-message-writer (copy-done)
   'done)
@@ -125,14 +133,14 @@
   (send-int (bindings-format result)))
 
 (define-message-writer (parse name query parameter-types)
-  (send-string namer)
+  (send-string name)
   (send-string query)
   (for-each send-parameter-type parameter-types))
 
-(define-message-writer (password-message pwd)
+(define-message-writer (password pwd)
   (send-string pwd))
 
-(define-message-writer (query q)
+(define-message-writer (query-message q)
   (send-string q))
 
 (define-message-writer (sync)
@@ -140,3 +148,17 @@
 
 (define-message-writer (terminate)
   'terminate)
+
+(define-macro (protocol-version) 196608)
+
+(define (send-startup-message database user #!optional (port (current-output-port)))
+  (let ((len (+ 25 (string-length database) (string-length user))))
+    (send-int32 len port)
+    (send-int32 (protocol-version) port)
+    (send-string "user" port)
+    (send-string user port)
+    (send-string "database" port)
+    (send-string database port)
+    (send-char #\nul port)
+    (force-output port)))
+

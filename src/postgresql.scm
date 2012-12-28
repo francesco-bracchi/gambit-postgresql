@@ -144,15 +144,15 @@
 
 ;;; POSTGRES MESSAGES
 (define (send-password w con)
-  (let(
-       (p (connection-socket con))
+  (let((p (connection-socket con))
        (len (+ 5 (string-length w))))
   (send-char #\p p)
-  (send-string w p)))
+  (send-int 4 len p)
+  (send-string w p)
+  (force-output p)))
 
 (define (send-query sql con)
-  (let(
-       (p (connection-socket con))
+  (let((p (connection-socket con))
        (len (+ 5 (string-length sql))))
     (send-char #\Q p)
     (send-int 4 len p)
@@ -161,14 +161,12 @@
     (force-output p)))
 
 (define (send-term con)
-  (let(
-       (p (connection-socket con)))
+  (let((p (connection-socket con)))
     (send-char #\X p)
     (send-int 4 4 p)))
 
 (define (send-startup-packet con)
-  (let*(
-        (p (connection-socket con))
+  (let*((p (connection-socket con))
         (dbs (connection-database con))
         (usr (connection-username con))
         (len (+ 25 (string-length dbs) (string-length usr))))
@@ -185,8 +183,7 @@
   (let(
        (p (connection-socket con)))
     (let recv ()
-      (let (
-            (c (recv-char p)))
+      (let ((c (recv-char p)))
         (cond
          ((char=? c #\R)
           (let*(
@@ -196,7 +193,7 @@
              ((= cd RequestOk)
               (recv))
              ((= cd RequestClearPassword)
-              (send-password (connection-password con) p)
+              (send-password (connection-password con) con)
               (recv))
              (else
               (send-term con)

@@ -11,11 +11,37 @@
   field-descriptor-modifier
   field-descriptor-text?
   field-descriptor-binary?
-
-  make-handler-table
-  handler-table-ref
-  handler-table-set!
-
-  current-handler-table
   
-  recv-message))
+  ;; message types
+  authentication
+  backend-key-data
+  bind-complete
+  close-complete
+  command-complete
+  copy-data
+  copy-done
+  copy-fail
+  copy-in-response
+  copy-out-response
+  copy-both-response
+  data-row
+  empty-query-response
+  error-response
+  function-call-response
+  no-data
+  notice-response
+  notification-response
+  parameter-description
+  parameter-status
+  parse-complete
+  portal-suspended
+  ready-for-query
+  row-description
+
+  handle-next-message
+
+  current-message-handler
+  current-reader-port
+  *-tags-*
+  ))
+

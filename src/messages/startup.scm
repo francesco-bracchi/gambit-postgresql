@@ -1,23 +1,26 @@
 (##namespace ("postgresql/startup#"))
-
 (##include "~~lib/gambit#.scm")
 
-(define ProtocolVersion 196608)
+(include "io#.scm")
+(include "frontend#.scm")
+(include "backend#.scm")
 
-(define RequestOk 0)
+(define protocol-version 196608)
 
-(define RequestClearPassword 3)
+(define request-ok 0)
+
+(define request-clear-password 3)
 
 (define (send-startup-message database user #!optional (port (current-output-port)))
   (let ((len (+ 25 (string-length name) (string-length user))))
-    (send-int32 len)
-    (send-int32 ProtocolVersion)
-    (send-string "user")
-    (send-string user)
-    (send-string "database")
-    (send-string database)
-    (send-char #\nul)
-    (force-output)))
+    (send-int32 len port)
+    (send-int32 ProtocolVersion port)
+    (send-string "user" port)
+    (send-string user port)
+    (send-string "database" port)
+    (send-string database port)
+    (send-char #\nul port)
+    (force-output port)))
 
 (define (startup-handler connection)
   (let ((handler (make-message-handler)))

@@ -9,14 +9,14 @@
         (send-int (- byte-length 1) (arithmetic-shift value -8) port)
         (write-u8 (bitwise-and value 255) port))))
 
-(define (send-int8 value)
-  (send-int 1 value))
+(define (send-int8 value #!optional (port (current-output-port)))
+  (send-int 1 value port))
 
-(define (send-int16 value)
-  (send-int 1 value))
+(define (send-int16 value #!optional (port (current-output-port)))
+  (send-int 1 value port))
 
-(define (send-int32 value)
-  (send-int 4 value))
+(define (send-int32 value #!optional (port (current-output-port)))
+  (send-int 4 value port))
 
 (define (send-netint byte-length value #!optional (port (current-output-port)))
   (declare (fixnum = <= - + * quotient remainder bitwise-and arithmetic-shift)
@@ -42,16 +42,16 @@
     (declare (fixnum <= - + * arithmetic-shift bitwise-and)
              (not safe))
     (if (<= byte-length 0) value
-        (recv (- byte-length 1)
-              (bitwise-ior (arithmetic-shift value 8) (read-u8 port))))))
+	(let ((c (read-u8 port)))
+	  (recv (- byte-length 1) (bitwise-ior (arithmetic-shift value 8) c))))))
 
-(define (recv-int8 #!optional (port (current-output-port)))
+(define (recv-int8 #!optional (port (current-input-port)))
   (recv-int 1 port))
 
-(define (recv-int16 #!optional (port (current-output-port)))
+(define (recv-int16 #!optional (port (current-input-port)))
   (recv-int 2 port))
 
-(define (recv-int32 #!optional (port (current-output-port)))
+(define (recv-int32 #!optional (port (current-input-port)))
   (recv-int 4 port))
 
 (define (recv-netint byte-length #!optional (port (current-input-port)))
@@ -65,9 +65,21 @@
               (+ (* factor (read-u8 port)) value)
               (arithmetic-shift factor 8)))))
 
-(define (recv-string #!optional (port (current-input-port)))
-  (read-line port #\nul))
-    
+(define (u8list->string l character-encoding)
+  (call-with-input-u8vector 
+   (list->u8vector l)
+   (lambda (p) (read-line p #f))))
+
+(define (recv-string #!optional 
+		     (p (current-input-port))
+		     (character-encoding 'UTF-8))
+  (let recv ((st '()))
+    (let ((c (read-u8 p)))
+      (declare (fixnum char=?))
+      (if (= c 0)
+          (u8list->string (reverse st) character-encoding)
+          (recv (cons c st))))))
+  
 (define (recv-bytes length #!optional (port (current-input-port)))
   (let ((result (make-u8vector length)))
     (read-subu8vector result 0 length port)

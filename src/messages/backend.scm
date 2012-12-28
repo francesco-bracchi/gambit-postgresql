@@ -1,6 +1,46 @@
+;; TODO describe each tag as part of meta information provided for maintainance 
+
 (##namespace ("postgresql/messages/backend#"))
 (##include "~~lib/gambit#.scm")
 (include "io#.scm")
+
+(define-macro (char-code c) (char->integer c))
+
+(define-macro (lo) (char->integer #\0))
+
+(define-macro (hi) (+ 1 (char->integer #\z)))
+
+(define *-tags-* '())
+
+(define-macro (define-tag name char)
+  `(begin 
+     (define ,name (char-code ,char))
+     (set! *-tags-* (cons ,name *-tags-*))))
+
+(define-tag authentication          #\R)
+(define-tag backend-key-data        #\K)
+(define-tag bind-complete           #\2)
+(define-tag close-complete          #\3)
+(define-tag command-complete        #\C)
+(define-tag copy-data               #\d)
+(define-tag copy-done               #\c)
+(define-tag copy-fail               #\f)
+(define-tag copy-in-response        #\G)
+(define-tag copy-out-response       #\H)
+(define-tag copy-both-response      #\W)
+(define-tag data-row                #\D)
+(define-tag empty-query-response    #\I)
+(define-tag error-response          #\E)
+(define-tag function-call-response  #\V)
+(define-tag no-data                 #\n)
+(define-tag notice-response         #\N)
+(define-tag notification-response   #\A)
+(define-tag parameter-description   #\t)
+(define-tag parameter-status        #\S)
+(define-tag parse-complete          #\1)
+(define-tag portal-suspended        #\s)
+(define-tag ready-for-query         #\Z)
+(define-tag row-description         #\T)
 
 (define-structure field-descriptor
   name
@@ -18,15 +58,11 @@
 ;; for each message type (defined by the first character received
 ;; there is an associated handler.
 
-(define (really-recv-message handler #!optional (port (current-input-port)))
+(define (really-handle-next-message handler #!optional (port (current-input-port)))
   (let* ((type (read-u8 port))
 	 (length (recv-int32 port))
-	 (data (recv-bytes (- length 5) port)))
-    (handler type data port)))
-
-(define-macro (lo) (char->integer #\0))
-
-(define-macro (hi) (+ 1 (char->integer #\z)))
+	 (data (recv-bytes (- length 4) port)))
+    (handler type data)))
 
 (define *message-readers* (make-vector (- (hi) (lo))))
 
@@ -34,35 +70,26 @@
   (let* ((key (car header))
 	 (formals (cdr header)))
     `(vector-set! *message-readers*  
-		  (- (char->integer ,key) (lo))
+		  (- ,key (lo))
 		  (lambda ,formals ,@body))))
 
 (define-macro (message-reader type)
   `(vector-ref *message-readers* (- ,type (lo))))
-  
-(define (raise-error . args) (error "handler not specified"))
 
-(define (make-handler-table)
-  (make-vector (- (hi) (lo)) raise-error))
+(define current-message-handler (make-parameter (lambda (type) (error "empty message handler"))))
 
-(define (handler-table-set! table type handler)
-  (vector-set! table type handler))
+(define current-reader-port (make-parameter (current-input-port)))
 
-(define (handler-table-ref table type)
-  (vector-ref table type))
-
-(define current-handler-table (make-parameter (make-handler-table)))
-
-(define (recv-message #!optional
-		      (table (current-handler-table))
-		      (port (current-input-port)))
-  (really-recv-message 
+(define (handle-next-message #!optional
+			     (port (current-reader-port))
+			     (message-handler (current-message-handler)))
+  (really-handle-next-message 
    (lambda (type data)
      (call-with-input-u8vector 
       data
-      (lambda (port) 
-	(parameterize ((current-input-port port))
-		      ((message-reader type) (u8vector-length data) (handler-table-ref table type))))))
+      (lambda (data-port) 
+	(parameterize ((current-input-port data-port))
+		      ((message-reader type) (u8vector-length data) (message-handler type))))))
    port))
 
 (define (repeat n fn)
@@ -81,28 +108,55 @@
 (define (recv-error-assoc #!optional (port (current-input-port)))
   (let recv ((pairs '()))
     (let ((c (read-u8 port)))
-      (if (= c 0) pairs
-	  (let* ((key (field-type c) )
+      (if (or (eq? c #!eof) (= c 0))
+	  (reverse pairs)
+	  (let* ((key (field-type c))
 		 (value (recv-string port))
 		 (pair (cons key value)))
 	    (recv (cons pair pairs)))))))
 
-(define (field-type c)
-  ;; put this in a vector reference
-  (cond
-   ((char=? c #\S) 'severity)
-   ((char=? c #\C) 'sql-state)
-   ((char=? c #\M) 'message)
-   ((char=? c #\D) 'detail)
-   ((char=? c #\H) 'hint)
-   ((char=? c #\P) 'position)
-   ((char=? c #\p) 'internal-position)
-   ((char=? c #\q) 'internal-query)
-   ((char=? c #\W) 'where)
-   ((char=? c #\F) 'file)
-   ((char=? c #\L) 'line)
-   ((char=? c #\R) 'routine)
-   (else (string->symbol (string-append "unknown-" (string c))))))
+(define (map->function alist)
+  (let* ((keys (map car alist))
+	 (values (map cdr alist))
+	 (lo (apply min keys))
+	 (hi (+ 1 (apply max keys)))
+	 (vector (make-vector (- hi lo))))
+    (map (lambda (key value) (vector-set! vector (- key lo) value)) keys values)
+    (lambda (key) (vector-ref vector (- key lo)))))
+
+(define field-type 
+  (map->function 
+   (map (lambda (p) (cons (char->integer (car p)) (cdr p)))
+	'((#\S . severity)
+	  (#\C . sql-state)
+	  (#\M . message)
+	  (#\D . detail)
+	  (#\H . hint)
+	  (#\P . position)
+	  (#\p . internal-position)
+	  (#\q . internal-query)
+	  (#\W . where)
+	  (#\F . file)
+	  (#\L . line)
+	  (#\R . routine)))))
+     
+
+;; (define (field-type c)
+;;   ;; put this in a vector reference
+;;   (cond
+;;    ((= c (char-code #\S)) 'severity)
+;;    ((= c (char-code #\C)) 'sql-state)
+;;    ((= c (char-code #\M)) 'message)
+;;    ((= c (char-code #\D)) 'detail)
+;;    ((= c (char-code #\H)) 'hint)
+;;    ((= c (char-code #\P)) 'position)
+;;    ((= c (char-code #\p)) 'internal-position)
+;;    ((= c (char-code #\q)) 'internal-query)
+;;    ((= c (char-code #\W)) 'where)
+;;    ((= c (char-code #\F)) 'file)
+;;    ((= c (char-code #\L)) 'line)
+;;    ((= c (char-code #\R)) 'routine)
+;;    (else (string->symbol (string-append "unknown-" (string c))))))
 
 (define (recv-description #!optional (port (current-input-port)))
   (let* ((name (recv-string port))
@@ -120,38 +174,12 @@
 			   modifier
 			   (= mode 0))))
 
-
-(define authentication          #\R)
-(define backend-key-data        #\K)
-(define bind-complete           #\2)
-(define close-complete          #\3)
-(define command-complete        #\C)
-(define copy-data               #\d)
-(define copy-done               #\c)
-(define copy-fail               #\f)
-(define copy-in-response        #\G)
-(define copy-out-response       #\H)
-(define copy-both-response      #\W)
-(define data-row                #\D)
-(define empty-query-response    #\I)
-(define error-response          #\E)
-(define function-call-response  #\V)
-(define no-data                 #\n)
-(define notice-response         #\N)
-(define notification-response   #\A)
-(define parameter-description   #\t)
-(define parameter-status        #\S)
-(define parse-complete          #\1)
-(define portal-suspended        #\s)
-(define ready-for-query         #\Z)
-(define row-description         #\T)
-
 (define-message-reader (authentication length handler)
-  (handler (recv-int32)))
+  (handler (recv-int 4)))
 
 (define-message-reader (backend-key-data length handler)
-  (let* ((pid (recv-int32))
-	 (secret (recv-int32)))
+  (let* ((pid (recv-int 4))
+	 (secret (recv-int 4)))
     (handler pid secret)))
 
 (define-message-reader (bind-complete length handler)
@@ -248,7 +276,13 @@
   (handler))
 
 (define-message-reader (ready-for-query length handler)
-  (let* ((transaction-status (read-u8)))
+  (let* ((code (read-u8))
+	 (transaction-status 
+	  (cond
+	   ((= code (char-code #\I)) 'idle)
+	   ((= code (char-code #\T)) 'transaction)
+	   ((= code (char-code #\E)) 'failed-transaction)
+	   (else 'unknown))))
     (handler transaction-status)))
 
 (define-message-reader (row-description length handler)

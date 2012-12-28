@@ -19,9 +19,8 @@
 	 ((current-input-port port)
 	  (current-output-port port)
 	  (current-connection connection)
-	  (current-handler-table startup-handler-table)
+	  (current-handler-table startup-handler-table))
 	 (startup-connection)
 	 (if (not (current-reader-table)) (init-current-reader-table connection))
-	 (current-handler-table default-handler-table)
-	 
-	
+	 (current-handler-table default-handler-table)))))
+
