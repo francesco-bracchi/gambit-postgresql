@@ -1,41 +1,23 @@
 (##namespace
  ("postgresql/connection#"
-
-  current-connection
   open-connection
-  call-with-connection
-  with-connection
-
-  current-result-port
-  open-simple-query
-  call-with-simple-query
-  with-simple-query
-  reduce-query
-
-  make-connection
-  connection?
-  connection-database 
+  connection-database
   connection-username
   connection-password
   connection-server-address
   connection-port-number
   connection-character-encoding
-  connection-notice-handler
-  connection-reader connection-reader-set!
-  connection-port
-  connection-consumer connection-consumer-set!
-  connection-handler-table connection-handler-table-set!
-  current-description-table
-  current-port-table
-  connection-parameters connection-parameters-set!
-  connection-type-readers connection-type-readers-set!
+  connection-notification-handler connection-notification-handler-set!
+  connection-parameters connection-parameter connection-parameter-set!
   connection-pid connection-pid-set!
   connection-secret connection-secret-set!
-  connection-constructors-table connection-constructors-table-set!
+  connection-reader
+  connection-handler-table connection-handler-table-set! 
+  connection-port
 
-  connection-parameter
-  
-  with-transaction
+  current-connection
+  open-connection
+  close-connection
+  call-with-connection
+  with-connection
   ))
-
-		    

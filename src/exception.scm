@@ -1,20 +1,35 @@
 (##namespace ("postgresql/exception#"))
 (##include "~~lib/gambit#.scm")
 
-(define-structure backend-exception
-  (fields read-only:)
-  (query read-only: init: #f))
+(define-structure postgresql-exception
+  extender: define-postgresql-exception
+  (connection read-only: unprintable:))
 
-(define (and-cdr e)
-  (and e (cdr e)))
+(define-postgresql-exception unsupported-authentication-method-exception 
+  (code read-only: unprintable:)
+  (name read-only: unprintable:))
 
-(define-macro (define-field-getter key)
-  (let ((exception (gensym 'exception))
-	(symbol-append (lambda ss (string->symbol (apply string-append (map symbol->string ss))))))
-    `(define (,(symbol-append 'backend-exception- key) ,exception)
-       (and-cdr (assq ',key (backend-exception-fields ,exception))))))
+(define-postgresql-exception backend-exception
+  (fields read-only: unprintable:))
 
-(define-macro (define-field-getters . keys)
-  `(begin ,@(map (lambda (key) `(define-field-getter ,key)) keys)))
+(define-macro (define-value-getter name)
+  (let ((ex (gensym 'ex))
+	(vals (gensym 'vals)))
+    `(define (,(symbol-append 'backend-exception- name) ,ex)
+       (let ((,vals (backend-exception-fields ,ex)))
+	 (cond
+	  ((assq ,(list 'quote name) ,vals) => cdr)
+	  (else #f))))))
 
-(define-field-getters severity sql-state message)
+;; (define-macro (define-value-getters . names)
+;;   `(begin ,@(map (lambda (n) `(define-value-getter ,n))
+;; 		 names)))
+	
+;; (define-value-getters 
+;;   severity 
+;;   sql-state 
+;;   message
+;;   file
+;;   line 
+;;   routine)
+  
