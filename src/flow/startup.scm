@@ -1,20 +1,40 @@
 (##namespace ("postgresql/flow/startup#"))
 (##include "~~/lib/gambit#.scm")
 
+(include "../utils/queue#.scm")
 (include "../connection#.scm")
 (include "../exception#.scm")
 (include "../messages/io#.scm")
 (include "../messages/frontend#.scm")
 (include "../messages/backend#.scm")
+
 (include "handler#.scm")
+(include "notifications#.scm")
 
 (define-macro (request-ok) 0)
 
 (define-macro (request-clear-password) 3)
 
-;; TODO: fill up this function
+(define-macro (request-kerberos) 2)
+
+(define-macro (request-md5-password) 5)
+
+(define-macro (request-scm-credential) 6)
+
+(define-macro (request-gss) 7)
+
+(define-macro (request-sspi) 9)
+
 (define (code->name code)
-  'unknown)
+  (cond
+   ((eq? code (request-clear-password)) 'clear-password)
+   ((eq? code (request-kerberos)) 'kerberos)
+   ((eq? code (request-md5-password)) 'md5)
+   ((eq? code (request-scm-credential)) 'scm)
+   ((eq? code (request-gss)) 'gss)   
+   ((eq? code (request-sspi)) 'sspi)
+   (else 'unknown)))
+
 
 (define-handler-table startup-table
 
@@ -40,7 +60,11 @@
   
   ;; ((notice-response ..) ...)
 
-  ;; ((notification-response ..) ..)
+  ((notification-response pid channel payload)
+   (let ((queue (connection-notifications (current-connection)))
+	 (notification (make-notification pid channel payload)))
+     (push! notification queue)
+     (handle-next-message)))
  
   ((backend-key-data pid secret)
    (let ((connection (current-connection)))
@@ -53,9 +77,10 @@
    (handle-next-message))
   
   ((ready-for-query status) 
+   (connection-status-set! (current-connection) status)
    (current-connection)))
 
-(define (startup-flow connection)
+(define (startup-flow #!optional (connection (current-connection)))
   (parameterize
    ((current-connection connection)
     (current-input-port (connection-port connection))

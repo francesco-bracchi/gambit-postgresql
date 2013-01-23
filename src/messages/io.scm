@@ -13,7 +13,7 @@
   (send-int 1 value port))
 
 (define (send-int16 value #!optional (port (current-output-port)))
-  (send-int 1 value port))
+  (send-int 2 value port))
 
 (define (send-int32 value #!optional (port (current-output-port)))
   (send-int 4 value port))

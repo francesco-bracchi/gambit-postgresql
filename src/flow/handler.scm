@@ -13,4 +13,8 @@
 (define (handle-next-message #!optional 
 			     (table (current-handler-table))
 			     (port (current-input-port)))
-  (handle-message (read-message port) table))
+  (let ((message (read-message port)))
+    #;(pp `(HANDLING ,message))
+    (handle-message message table)))
+
+

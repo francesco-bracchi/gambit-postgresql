@@ -84,7 +84,7 @@
   (let* ((pid (recv-int32))
 	 (channel (recv-string))
 	 (payload (recv-string)))
-    (list pid channel payload)))
+    (list pid channel (if (eof-object? payload) "" payload))))
 
 (define-message-reader (parameter-description)
   (let* ((parameters (recv-int16))

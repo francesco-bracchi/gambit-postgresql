@@ -1,6 +1,7 @@
 (##namespace ("postgresql/connection#"))
 (##include "~~/lib/gambit#.scm")
 
+(include "utils/queue#.scm")
 (include "messages/frontend#.scm")
 (include "messages/backend#.scm")
 (include "flow/startup#.scm")
@@ -16,9 +17,11 @@
   (notification-handler unprintable:)
   (port read-only: unprintable:)
   (parameters unprintable:)
-  (pid init: -1)
+  (pid init: -1 unprintable:)
   (secret unprintable: init: 0)
   (reader unprintable: init: #f)
+  (status init: 'startup)
+  (notifications unprintable: read-only:) ;; TODO: this is a queue, use a better data structure
   ;; (handler-table unprintable: init: idle-handler)
   ;; (reader-port unprintable: init: #f)
   ;; (type-readers unprintable:)
@@ -62,7 +65,8 @@
 				      character-encoding
 				      notification-handler
 				      port
-				      (make-table))))
+				      (make-table)
+				      (make-queue))))
     (startup-flow connection)
     ;; (start-reader connection)
     connection))
@@ -70,7 +74,8 @@
 (define (close-connection #!optional (connection (current-connection)))
   (let ((port (connection-port connection)))
     (send-message (terminate) port)
-    (close-port port)))
+    (close-port port)
+    (connection-pid-set! connection -1)))
 
 (define (call-with-connection database-or-settings function)
   (if (string? database-or-settings)
@@ -80,7 +85,9 @@
 	 (lambda (ex) 
 	   (close-connection connection)
 	   (raise ex))
-	 (lambda () (function connection))))))
+	 (lambda () 
+	   (function connection)
+	   (close-connection connection))))))
 
 (define (with-connection database-or-settings function)
   (call-with-connection
@@ -89,14 +96,15 @@
      (parameterize
       ((current-connection connection))
       (function)))))
-
-(define (sql-eval q #!optional (connection (current-connection)))
-  (connection-mode-set! connection 'simple-query)
-  (send-message (query q) (connection-port connection))
-  (read (connection-communication-port connection)))
+  
+;; (define (sql-eval q #!optional (connection (current-connection)))
+;;   (connection-mode-set! connection 'simple-query)
+;;   (send-message (query q) (connection-port connection))
+;;   (read (connection-communication-port connection)))
 
 (define (connection-parameter key #!optional (connection (current-connection)))
   (table-ref (connection-parameters connection) key))
 
 (define (connection-parameter-set! key value #!optional (connection (current-connection)))
   (table-set! (connection-parameters connection) key value))
+

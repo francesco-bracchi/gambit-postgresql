@@ -12,7 +12,9 @@
   connection-pid connection-pid-set!
   connection-secret connection-secret-set!
   connection-reader
-  connection-handler-table connection-handler-table-set! 
+  connection-notifications
+  ; connection-handler-table connection-handler-table-set! 
+  connection-status connection-status-set!
   connection-port
 
   current-connection

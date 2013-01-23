@@ -41,6 +41,7 @@
   (force-output port))
 
 (define (send-message message #!optional (port (current-output-port)))
+  #;(pp `(SENDING (,(message-name message) ,@(message-values message))))
   (parameterize
    ((current-output-port port))
    (if (eq? (message-name message) 'startup)

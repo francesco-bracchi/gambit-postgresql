@@ -10,7 +10,7 @@
   (name read-only: unprintable:))
 
 (define-postgresql-exception backend-exception
-  (fields read-only: unprintable:))
+  (fields read-only:))
 
 (define-macro (define-value-getter name)
   (let ((ex (gensym 'ex))
