@@ -21,9 +21,10 @@
 
 (define current-status (make-parameter #f))
 
-(define (from-u8vector vect)
-  (call-with-input-u8vector vect (lambda (port) (read port))))
-			    
+(define (from-u8vector vect desc)
+  (let ((oid (field-descriptor-type desc)))
+    (call-with-input-u8vector vect (get-reader (oid->type oid)))))
+
 (define-structure statement 
   (id read-only:)
   (connection read-only: unprintable:))
@@ -34,15 +35,12 @@
 
 (define-handler-table extended-query-table
   ((parse-complete)
-   (connection-status-set! (current-connection) 'parsed)
    (handle-next-message))
 
   ((bind-complete)
-   (connection-status-set! (current-connection) 'bound)
    (handle-next-message))
 
   ((portal-suspended)
-   (connection-status-set! (current-connection) 'suspended)
    (send-message (execute (portal-id (current-portal)) (current-maximum-result-rows)))
    (handle-next-message))
 
@@ -50,7 +48,7 @@
    (raise (make-backend-exception (current-connection) fields)))
   
   ((command-complete tag)
-   (connection-status-set! (current-connection) tag)
+   (connection-status-set! (current-connection) 'idle)
    (current-status))
 
   ((empty-query-response)
@@ -58,10 +56,9 @@
    (current-status))
 
   ((ready-for-query status)
-   (connection-status-set! (current-connection) status)
+   (connection-status-set! (current-connection) 'idle)
    (current-status))
   
-  ;; TODO move this in a separate file
   ((notification-response pid channel payload)
    (let ((queue (connection-notifications (current-connection)))
 	 (notification (make-notification pid channel payload)))
@@ -71,13 +68,14 @@
   ((row-description fields description)
    (current-description description)
    (handle-next-message))
-   
+  
   ((data-row columns row)
    (let ((function (current-function))
-	 (status (current-status)))
-     (current-status (apply function status (map from-u8vector row)))
-     (handle-next-message)))
-  )
+	 (status (current-status))
+	 (description (current-description)))
+     (current-status (apply function status (map from-u8vector row description)))
+     (handle-next-message))))
+  
 
 (define (prepare sql-string #!key
 		 (id (symbol->string (gensym 'p)))
@@ -87,10 +85,6 @@
 		 (current-input-port (connection-port connection))
 		 (current-output-port (connection-port connection)))
     (send-message (parse id sql-string types))
-    ;; (send-message (flush))
-    ;; (force-output)
-    ;; (connection-status-set! connection 'parse)
-    ;; (handle-next-message)
     (make-statement id connection)))
 
 (define (postgresql/flow/extended-query#bind statement
@@ -102,7 +96,6 @@
     (parameterize ((current-connection connection)
 		   (current-output-port (connection-port connection))
 		   (current-input-port (connection-port connection)))
-      (connection-status-set! connection 'bind)
       (send-message (bind id (statement-id statement) arguments '()))
       (make-portal id connection))))
 
@@ -116,41 +109,38 @@
 (define (postgresql/flow/extended-query#execute maybe-portal
 						#!key
 						(arguments '())
-						(initial-value '())
-						(function #f)
+						(initial-value #f)
+						(function (lambda x #t))
 						(maximum-result-rows 0)
 						(connection (current-connection)))
   (let* ((portal (to-portal maybe-portal connection arguments))
 	 (connection (portal-connection portal)))
-    #;(cleanup connection)
-    (connection-status-set! connection 'execute)
+    (cleanup connection)
     (parameterize
 	((current-connection connection)
 	 (current-input-port (connection-port connection))
 	 (current-output-port (connection-port connection))
 	 (current-description '())
 	 (current-portal portal)
-	 (current-function (or function (lambda (queue . rest) (push! rest queue))))
-	 (current-status (if function initial-value (make-queue)))
+	 (current-function function)
+	 (current-status initial-value)
 	 (current-maximum-result-rows maximum-result-rows)
 	 (current-handler-table extended-query-table))
-      (send-message (execute (portal-id portal) maximum-result-rows))
       (send-message (describe 'portal (portal-id portal)))
+      (send-message (execute (portal-id portal) maximum-result-rows))
       (send-message (flush))
-      (if function
-	  (handle-next-message)
-	  (queue->list (handle-next-message))))))
+      (handle-next-message))))
 
 (define (postgresql/flow/extended-query#execute-generator portal #!optional (arguments '()) (connection (current-connection)))
   (letrec ((state (lambda (return0)
-		     (postgresql/flow/extended-query#execute portal
-							     initial-value: return0
-							     arguments: arguments
-							     function: (lambda (return . rest) 
-									 (call/cc (lambda (state0) 
-										    (set! state state0) 
-										    (return rest))))
-							     connection: connection)
-		     #!eof)))
+		    (postgresql/flow/extended-query#execute portal
+							    initial-value: return0
+							    arguments: arguments
+							    function: (lambda (return . rest) 
+									(call/cc (lambda (state0) 
+										   (set! state state0) 
+										   (return rest))))
+							    connection: connection)
+		    #!eof)))
     (lambda () (call/cc state))))
 

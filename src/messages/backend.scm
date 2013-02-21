@@ -51,13 +51,14 @@
       ((current-input-port data-port))
       (reader (u8vector-length buffer))))))
 
+;; TODO: rename to recv-message
 (define (read-message #!optional (port (current-input-port)))
   (let* ((code (read-u8 port))
 	 (length (recv-int32 port))
 	 (buffer (recv-bytes (- length 4) port))
 	 (reader (vector-ref *message-readers* (- code (lo))))
 	 (data (buffer->data buffer reader)))
-    #;(pp `(RECEIVING (,(code->name code) ,@data)))
+    (pp `(RECEIVING (,(code->name code) ,@data)))
     (make-message (code->name code) code data)))
 
 (define (repeat n fn)

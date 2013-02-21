@@ -37,7 +37,6 @@
 
 
 (define-handler-table startup-table
-
   ((authentication code)
    (cond
     ((= code (request-ok)) (handle-next-message))
@@ -89,4 +88,15 @@
    (let ((database (connection-database connection))
 	 (username (connection-username connection)))
      (send-message (startup database username))
-     (handle-next-message))))
+     (handle-next-message)
+     #;(init-type-table))))
+
+(define *type-tables* (make-table weak-keys: #t))
+
+(define (init-type-table #!optional (connection (current-connection)))
+  (table-set! *type-tables* connection
+	      (list->table
+	       (simple-query "SELECT typname, oid FROM pg_type"
+			     initial-value: '()
+			     function: (lambda (stack typename oid) (cons (cons oid typename) stack))))))
+   

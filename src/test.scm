@@ -16,10 +16,10 @@
 (include "connection#.scm")
 (include "exception#.scm")
 
-
 (include "flow/notifications#.scm")
 (include "flow/simple-query#.scm")
 (include "flow/extended-query#.scm")
+(include "flow/cleanup#.scm")
 
 (define (repeat n fn)
   (if (<= n 1) (fn)
@@ -43,8 +43,8 @@
 	(simple-query "SELECT typname, oid FROM pg_type"
 		      function: (lambda (status type oid) (pp `(NAME ,type ,oid)) status))
 	(pp (simple-query "LISTEN papa"))
-	(pp `(WAITING FOR NOTIFICATION ON CHANNEL papa))
-	(pp (recv-notification)))))))
+	#;(pp `(WAITING FOR NOTIFICATION ON CHANNEL papa))
+	#;(pp (recv-notification)))))))
 
 (define (test1)
   (with-connection 
@@ -58,17 +58,18 @@
 	   ((eof-object? j) 'HAHA)
 	 (pp `(J ,j)))))))
 
-
 (define (test2)
   (with-connection 
    (list database: "notapipe"
 	 username: "nap_user"
 	 password: "LKZ3WC")
    (lambda ()
-     (pp 'ciao)
-     (pp (execute "SELECT typname, oid FROM pg_type"
-		  function: (lambda (state typename oid) (cons (list 'HAHA typename oid) state)) )))))
+     (execute "SELECT typname, oid FROM pg_type"
+	      initial-value: '()
+	      function: (lambda (state typename oid)
+			  (cons (list typename oid) state))))))
 
-;;(time (test))
-;;(time (test1))
+;(time (test))
+;(time (test1))
 (time (test2))
+(display 'ok)

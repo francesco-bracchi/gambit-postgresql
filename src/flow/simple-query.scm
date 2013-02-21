@@ -31,6 +31,7 @@
    (handle-next-message))
   
   ((row-description fields description)
+   (pp `(DESC ,description))
    (current-description description)
    (handle-next-message))
   
@@ -51,8 +52,8 @@
      (handle-next-message))))
 
 (define (simple-query sql-string #!key
-		      (function #f)
-		      (initial-value '())
+		      (function (lambda x #t))
+		      (initial-value #f)
 		      (connection (current-connection)))
   (cleanup connection)
   (connection-status-set! connection 'simple-query)
@@ -61,13 +62,11 @@
        (current-input-port (connection-port connection))
        (current-output-port (connection-port connection))
        (current-description '())
-       (current-function (or function (lambda (queue . rest) (push! rest queue))))
-       (current-status (if function (make-queue) initial-value))
+       (current-function function)
+       (current-status initial-value)
        (current-handler-table simple-query-table))
     (send-message (query sql-string))
-    (if function 
-	(queue->list (handle-next-message))
-	(handle-next-message))))
+    (handle-next-message)))
 
 (define (simple-query-generator sql-string #!optional (connection (current-connection)))
   (letrec ((state (lambda (return0)

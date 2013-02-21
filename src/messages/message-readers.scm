@@ -102,9 +102,8 @@
 (define-message-reader (portal-suspended length)
   '())
 
-(define-macro (char-code c) (char->integer c))
-
 (define-message-reader (ready-for-query length)
+  (define-macro (char-code c) (char->integer c))
   (let* ((code (read-u8))
 	 (transaction-status 
 	  (cond

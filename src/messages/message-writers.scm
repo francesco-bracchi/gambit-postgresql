@@ -16,8 +16,8 @@
 ;todo raise a postgresql exception
 (define (send-type t) 
   (cond
-   ((eq? t 'portal) (send-char #\p))
-   ((eq? t 'statement) (send-char #\s))
+   ((eq? t 'portal) (send-char #\P))
+   ((eq? t 'statement) (send-char #\S))
    (else (error "unkown type"))))
 
 
