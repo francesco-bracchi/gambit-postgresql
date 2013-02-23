@@ -58,7 +58,7 @@
 	 (buffer (recv-bytes (- length 4) port))
 	 (reader (vector-ref *message-readers* (- code (lo))))
 	 (data (buffer->data buffer reader)))
-    (pp `(RECEIVING (,(code->name code) ,@data)))
+    ;; (pp `(RECEIVING (,(code->name code) ,@data)))
     (make-message (code->name code) code data)))
 
 (define (repeat n fn)
