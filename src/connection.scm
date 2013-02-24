@@ -1,44 +1,12 @@
 (##namespace ("postgresql/connection#"))
 (##include "~~/lib/gambit#.scm")
 
+(include "connection#.scm")
 (include "utils/queue#.scm")
 (include "messages/frontend#.scm")
 (include "messages/backend#.scm")
-(include "flow/startup#.scm")
-
-;; TODO: use macro accessor and create getters/setters that has as optional argument connection i.e. current-connection
-(define-structure connection
-  (database read-only:)
-  (username read-only: unprintable:)
-  (password read-only: unprintable:)
-  (server-address read-only: unprintable:)
-  (port-number read-only: unprintable:)
-  (character-encoding read-only: unprintable:)
-  (notification-handler unprintable:)
-  (port read-only: unprintable:)
-  (parameters unprintable:)
-  (pid init: -1 unprintable:)
-  (secret unprintable: init: 0)
-  (reader unprintable: init: #f)
-  (status init: 'startup)
-  (notifications unprintable: read-only:) ;; TODO: this is a queue, use a better data structure
-  ;; (handler-table unprintable: init: idle-handler)
-  ;; (reader-port unprintable: init: #f)
-  ;; (type-readers unprintable:)
-  )
-
-(define (read-messages connection server)
-  (parameterize
-   ((current-connection connection)
-    (current-input-port (connection-port connection))
-    (current-output-port (connection-port connection))
-    (current-handler-table startup-table))
-   (handle-next-message)))
-  
-(define (start-reader connection)
-  (receive (client server) (open-vector-pipe)
-	   (connection-data-port-set! connection client)
-	   (thread-start! (make-thread (lambda () (read-messages connection server))))))
+(include "commands/execute#.scm")
+(include "commands/startup#.scm")
 
 (define current-connection (make-parameter #f))
 
@@ -55,20 +23,21 @@
 		 (server-address "localhost")
 		 (port-number 5432)
 		 (character-encoding 'UTF-8)
-		 (notification-handler (lambda _ 'ignore)))
+		 (notice-handler (lambda (conn) (close-connection conn))))
   (let* ((port (open-database-port server-address port-number))
-	 (connection (make-connection database
-				      username
-				      password
-				      server-address
-				      port-number
-				      character-encoding
-				      notification-handler
-				      port
-				      (make-table)
-				      (make-queue))))
-    (startup-flow connection)
-    ;; (start-reader connection)
+	 (connection (make-connection 
+		      database
+		      username
+		      password 
+		      server-address
+		      port-number
+		      character-encoding
+		      port
+		      (make-table)
+		      (make-queue)
+		      notice-handler)))
+    (connection-init! connection)
+    (connection-update-oid-table! connection)
     connection))
 
 (define (close-connection #!optional (connection (current-connection)))
@@ -86,8 +55,9 @@
 	   (close-connection connection)
 	   (raise ex))
 	 (lambda () 
-	   (function connection)
-	   (close-connection connection))))))
+	   (let ((v (function connection)))
+	     (close-connection connection)
+	     v))))))
 
 (define (with-connection database-or-settings function)
   (call-with-connection
@@ -96,11 +66,6 @@
      (parameterize
       ((current-connection connection))
       (function)))))
-  
-;; (define (sql-eval q #!optional (connection (current-connection)))
-;;   (connection-mode-set! connection 'simple-query)
-;;   (send-message (query q) (connection-port connection))
-;;   (read (connection-communication-port connection)))
 
 (define (connection-parameter key #!optional (connection (current-connection)))
   (table-ref (connection-parameters connection) key))
@@ -108,3 +73,45 @@
 (define (connection-parameter-set! key value #!optional (connection (current-connection)))
   (table-set! (connection-parameters connection) key value))
 
+(define (call-with-connection-port connection function)
+  (let ((port (connection-port connection)))
+    (parameterize
+     ((current-connection connection)
+      (current-input-port port)
+      (current-output-port port))
+     (function))))
+
+(define (connection-notification-push! connection value)
+  (connection-notifications-set! connection 
+				 (push! value (connection-notifications connection))))
+
+
+(define (connection-update-oid-table! #!optional (connection (current-connection)))
+  (let* ((to-string (lambda (u8) (call-with-input-u8vector u8 (lambda (port) (read-line port #f)))))
+	 (to-symbol (lambda (u8) (string->symbol (to-string u8))))
+	 (to-int (lambda (u8) (string->number (to-string u8)))))
+    (connection-oid-table-set!
+     connection
+     (list->table
+      (connection-execute 
+       "SELECT typname, oid FROM pg_type"
+       connection: connection
+       initial-value: '()
+       function: (lambda (ass typname oid) (cons (cons (to-int oid) (to-symbol typname)) ass)))))))
+
+(define (connection-oid->name oid #!optional (connection (current-connection)))
+  (let ((table (connection-oid-table connection)))
+    (and table (table-ref table oid #f))))
+  
+
+(define (with-transaction function #!optional (connection (current-connection)))
+  (parameterize 
+   ((current-connection connection))
+   (with-exception-catcher
+    (lambda (ex) 
+      (connection-execute (string-append "ROLLBACK"))
+      (raise ex))
+    (lambda () 
+      (connection-execute (string-append "BEGIN"))
+      (fn)
+      (connection-execute (string-append "COMMIT TRANSACTION"))))))

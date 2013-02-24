@@ -4,8 +4,9 @@
 (##include "~~lib/gambit#.scm")
 (include "io#.scm")
 (include "messages#.scm")
+(include "backend#.scm")
 
-(define-tags
+(define-tag-set backend
   (authentication          #\R)
   (backend-key-data        #\K)
   (bind-complete           #\2)
@@ -31,22 +32,13 @@
   (ready-for-query         #\Z)
   (row-description         #\T))
 
-(define-structure field-descriptor
-  name
-  table
-  index
-  type
-  type-size
-  modifier
-  text?)
-
 (define (field-descriptor-binary? fd)
   (not (field-descriptor-text? fd)))
 
 (define (buffer->data buffer reader) 
   (call-with-input-u8vector 
    buffer
-   (lambda (data-port) 
+   (lambda (data-port)
      (parameterize 
       ((current-input-port data-port))
       (reader (u8vector-length buffer))))))
@@ -56,10 +48,10 @@
   (let* ((code (read-u8 port))
 	 (length (recv-int32 port))
 	 (buffer (recv-bytes (- length 4) port))
-	 (reader (vector-ref *message-readers* (- code (lo))))
+	 (reader (vector-ref *message-readers* (- code backend/lo)))
 	 (data (buffer->data buffer reader)))
-    ;; (pp `(RECEIVING (,(code->name code) ,@data)))
-    (make-message (code->name code) code data)))
+    ;(pp `(RECEIVING (,(backend/code->name code) ,@data)))
+    (make-message (backend/code->name code) code data)))
 
 (define (repeat n fn)
   (let repeat ((j 0) (rs '()))
@@ -142,13 +134,13 @@
 			   modifier
 			   (= mode 0))))
 
-(define *message-readers* (make-vector (- (hi) (lo))))
+(define *message-readers* (make-vector (- backend/hi backend/lo -1)))
 
 (define-macro (define-message-reader header . body)
   (let* ((name (car header))
 	 (formals (cdr header)))
     `(vector-set! *message-readers*  
-		  (- (name->code ,name) (lo))
+		  (- (backend/name->code ',name) backend/lo)
 		  (lambda ,formals ,@body))))
 
 (include "message-readers.scm")

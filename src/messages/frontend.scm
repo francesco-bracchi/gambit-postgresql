@@ -4,24 +4,24 @@
 (include "io#.scm")
 (include "messages#.scm")
 
-(define-tags
-  (startup        #\nul)
-  (bind           #\B)
-  (close          #\C)
-  (copy-data      #\d)
-  (copy-done      #\b)
-  (copy-fail      #\f)
-  (describe       #\D)
-  (execute        #\E)
-  (flush          #\H)
-  (function-call  #\F)
-  (parse          #\P)
-  (password       #\p)
-  (query          #\Q)
-  (sync           #\S)
-  (terminate      #\X))
+(define-tag-set frontend 
+  (startup            #\s)
+  (bind               #\B)
+  (close              #\C)
+  (copy-data          #\d)
+  (copy-done          #\b)
+  (copy-fail          #\f)
+  (describe           #\D)
+  (execute            #\E)
+  (flush              #\H)
+  (function-call      #\F)
+  (parse              #\P)
+  (password           #\p)
+  (query              #\Q)
+  (sync               #\S)
+  (terminate          #\X))
 
-(define *message-writers* (make-vector (- (hi) (lo))))
+(define *message-writers* (make-vector (- frontend/hi frontend/lo -1)))
 
 (define (message->u8vector message)
   (call-with-output-u8vector
@@ -32,7 +32,7 @@
       (apply (message-writer message) (message-values message))))))
 
 (define (message-writer message)
-  (vector-ref *message-writers* (- (message-code message) (lo))))
+  (vector-ref *message-writers* (- (message-code message) frontend/lo)))
 
 (define (send-code-and-body code body #!optional (port (current-output-port)))
   (write-u8 code port)
@@ -52,14 +52,14 @@
 (define-macro (define-message name)
   (let ((values (gensym 'values)))
     `(define (,name . ,values) 
-       (make-message ',name (name->code ,name) ,values))))
+       (make-message ',name (frontend/name->code ',name) ,values))))
 
 (define-macro (define-message-writer head . body)
   (let ((name (car head))
 	(args (cdr head)))
     `(begin (define-message ,name)
 	    (vector-set! *message-writers*
-			 (- (name->code ,name) (lo))
+			 (- (frontend/name->code ',name) frontend/lo)
 			 (lambda ,args ,@body)))))
 
 (define-message startup)

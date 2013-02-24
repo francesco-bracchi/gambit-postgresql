@@ -1,75 +1,32 @@
 (load "utils/queue")
+(load "utils/type-readers")
 (load "connection.scm")
 (load "exception.scm")
 (load "messages/io")
 (load "messages/frontend")
 (load "messages/backend")
-(load "flow/handler")
-(load "flow/notifications")
-(load "flow/startup")
-(load "flow/cleanup")
-(load "flow/simple-query")
-(load "flow/extended-query")
+(load "commands/startup")
+(load "commands/execute")
 
-;(include "messages/frontend#.scm")
-(include "messages/backend#.scm")
 (include "connection#.scm")
 (include "exception#.scm")
-
-(include "flow/notifications#.scm")
-(include "flow/simple-query#.scm")
-(include "flow/extended-query#.scm")
-(include "flow/cleanup#.scm")
+(include "commands/execute#.scm")
 
 (define (repeat n fn)
   (if (<= n 1) (fn)
       (begin (fn)
 	     (repeat (- n 1) fn))))
 
+
 (define (test)
-  (with-exception-catcher
-   (lambda (ex)
-     (pp ex)
-     (cond
-      ((unsupported-authentication-method-exception? ex)
-       (pp (postgresql-exception-connection ex)))
-      (else (raise ex))))
+  (with-connection 
+   (list database: "notapipe"
+	 username: "nap_user"
+	 password: "LKZ3WC")
    (lambda () 
-     (with-connection 
-      (list database: "notapipe"
-	    username: "nap_user"
-	    password: "LKZ3WC")
-      (lambda ()
-	(simple-query "SELECT typname, oid FROM pg_type"
-		      function: (lambda (status type oid) (pp `(NAME ,type ,oid)) status))
-	(pp (simple-query "LISTEN papa"))
-	#;(pp `(WAITING FOR NOTIFICATION ON CHANNEL papa))
-	#;(pp (recv-notification)))))))
+     (time (connection-execute 
+	    "SELECT * from accounts"
+	    initial-value: 0
+	    function: (lambda (count . whatever) (+ count 1)))))))
 
-(define (test1)
-  (with-connection 
-   (list database: "notapipe"
-	 username: "nap_user"
-	 password: "LKZ3WC")
-   (lambda ()
-     (pp (current-connection))
-     (let ((next (simple-query-generator "SELECT typname, oid FROM pg_type")))
-       (do ((j (next) (next)))
-	   ((eof-object? j) 'HAHA)
-	 (pp `(J ,j)))))))
-
-(define (test2)
-  (with-connection 
-   (list database: "notapipe"
-	 username: "nap_user"
-	 password: "LKZ3WC")
-   (lambda ()
-     (execute "SELECT typname, oid FROM pg_type"
-	      initial-value: '()
-	      function: (lambda (state typename oid)
-			  (cons (list typename oid) state))))))
-
-;(time (test))
-;(time (test1))
-(time (test2))
-(display 'ok)
+(time (test))
