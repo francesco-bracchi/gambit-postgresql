@@ -18,8 +18,6 @@
       (begin (fn)
 	     (repeat (- n 1) fn))))
 
-(define ##xxx #f)
-
 (define (test)
   (with-connection 
    (list database: "notapipe"
@@ -33,4 +31,6 @@
 		  (+ count 1)))
      (pp (table->list (connection-oid-table (current-connection)))))))
 
+
+(define (test-notif
 (test)

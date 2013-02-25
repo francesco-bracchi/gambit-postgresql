@@ -50,7 +50,6 @@
 	 (buffer (recv-bytes (- length 4) port))
 	 (reader (vector-ref *message-readers* (- code backend/lo)))
 	 (data (buffer->data buffer reader)))
-    (if ##xxx (pp `(RECEIVING (,(backend/code->name code) ,@data))))
     (make-message (backend/code->name code) code data)))
 
 (define (repeat n fn)
