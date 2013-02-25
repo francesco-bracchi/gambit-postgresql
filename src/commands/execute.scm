@@ -34,11 +34,11 @@
 (define (connection-bind statement arguments 
 			 #!key 
 			 (id (symbol->string (gensym 'b)))
-			 (types '()))
+			 (types (map (lambda (x) 0) arguments)))
   (call-with-connection-port
    (statement-connection statement)
    (lambda ()
-     (send-message (bind id (statement-id statement) arguments '()))
+     (send-message (bind id (statement-id statement) arguments types))
      (make-portal id (current-connection)))))
 
 (define (to-portal thing arguments connection)
@@ -56,8 +56,8 @@
 			    (maximum-result-rows 0)
 			    (connection
 			     (cond
-			      ((statement? thing) (connection-statement thing))
-			      ((portal? thing) (connection-portal thing))
+			      ((statement? thing) (statement-connection thing))
+			      ((portal? thing) (portal-connection thing))
 			      (else (current-connection)))))
   (let ((portal (to-portal thing arguments connection)))
     (call-with-connection-port

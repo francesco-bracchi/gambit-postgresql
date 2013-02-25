@@ -38,6 +38,7 @@
 	(c (gensym 'code)))
     `(let* ((,m ,message)
 	    (,c (message-code ,m)))
+       (if ##xxx (pp ,m))
        (cond
 	,@(map (lambda (action)
 		 (let* ((head (car action))

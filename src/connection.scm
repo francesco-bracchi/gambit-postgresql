@@ -44,7 +44,8 @@
   (let ((port (connection-port connection)))
     (send-message (terminate) port)
     (close-port port)
-    (connection-pid-set! connection -1)))
+    (connection-pid-set! connection -1)
+    (connection-status-set! connection 'closed)))
 
 (define (call-with-connection database-or-settings function)
   (if (string? database-or-settings)

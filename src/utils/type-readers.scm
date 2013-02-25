@@ -47,9 +47,13 @@
 
 (define (read-number) (string->number (read-text)))
 
+(define (write-text txt)
+  (pp 'txt)
+  (display txt))
+
 (set-reader! 'text read-text)
 (set-reader! 'int2 read-number)
 (set-reader! 'int4 read-number)
-
 (set-reader! 'char read-char)
-(set-reader! 'char write-char)
+
+(set-writer! 'text write-text)

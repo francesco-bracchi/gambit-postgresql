@@ -29,12 +29,9 @@
 (define (send-object arg)
   (cond
    ((eq? arg '()) (send-int32 -1))
-   ((binary? (format arg))
-    (send-int32 (u8vector-length arg))
-    (write-subu8vector arg 0 (u8vector-length arg)))
    (else 
     ;; todo: use character encoding specified by the connection
-    (send-object (call-with-output-u8vector
+    (send-bytes  (call-with-output-u8vector
 		  (u8vector)
 		  (lambda (port) (write arg port)))))))
 
@@ -44,12 +41,12 @@
    ((t? (car ls)) (all? t? (cdr ls)))
    (else #f)))
 
+;; TODO: use ONLY text format right now (this is something that goes to text level
+;; better TODO: arguments is an alist of (u8vector . binary/text) where binary/text is 1 or 0.
+;; results is a list of binary/text 
+;; (bind "portal123" "statement456" '((#u8(10 20 30 40 ...) . 1) ...) '(0 1 1 0 1))
+;; let arguments be u8vector (it's flow level that should handle this)
 (define-message-writer (bind portal source arguments results)
-  ;; TODO: use ONLY text format right now (this is something that goes to text level
-  ;; better TODO: arguments is an alist of (u8vector . binary/text) where binary/text is 1 or 0.
-  ;; results is a list of binary/text 
-  ;; (bind "portal123" "statement456" '((#u8(10 20 30 40 ...) . 1) ...) '(0 1 1 0 1))
-  ;; let arguments be u8vector (it's flow level that should handle this)
   (let*((len (length arguments))
 	(formats (map format arguments))
 	(text? (all? (lambda (x) (= x 0)) formats))
@@ -62,7 +59,6 @@
 	(rbin? (all? (lambda (x) (= x 1)) results))
 	(rformat-len (cond (rtext? 0) (rbin? 1) (else rlen)))
 	(rformat-codes (cond (rtext? '()) (rbin? '()) (else results))))
-    
     (send-string portal)
     (send-string source)
 
@@ -77,11 +73,6 @@
     ;; send output format
     (send-int16 rformat-len)
     (for-each send-int16 rformat-codes)))
-
-  #;(send-int16 (length bindings))
-  #;(send-binding-values (map binding-value bindings))
-  #;(send-result-formats (map binding-format results))
-
 
 (define-message-writer (close type name)
   (send-type type)

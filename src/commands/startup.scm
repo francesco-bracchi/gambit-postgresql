@@ -12,7 +12,6 @@
 (include "../notification#.scm")
 (include "../messages/frontend#.scm")
 (include "../messages/backend#.scm")
-(include "../messages/messages#.scm")
 
 (define request-ok 0)
 
