@@ -24,11 +24,14 @@
 (define (handle-notification-message)
   (recv-message
    ((notification-response pid channel payload)
+    (pp `(notification response))
     (make-notification pid channel payload))
-
+   
    ((error-response fields)
+    (pp `(error response))
     (raise (make-backend-exception (current-connection) fields)))
 
    ((parameter-status key value)
+    (pp `(parameter status))
     (connection-parameter-set! key value)
     (handle-notification-message))))

@@ -100,23 +100,6 @@
 	  (#\L . line)
 	  (#\R . routine)))))
 
-;; (define (field-type c)
-;;   ;; put this in a vector reference
-;;   (cond
-;;    ((= c (char-code #\S)) 'severity)
-;;    ((= c (char-code #\C)) 'sql-state)
-;;    ((= c (char-code #\M)) 'message)
-;;    ((= c (char-code #\D)) 'detail)
-;;    ((= c (char-code #\H)) 'hint)
-;;    ((= c (char-code #\P)) 'position)
-;;    ((= c (char-code #\p)) 'internal-position)
-;;    ((= c (char-code #\q)) 'internal-query)
-;;    ((= c (char-code #\W)) 'where)
-;;    ((= c (char-code #\F)) 'file)
-;;    ((= c (char-code #\L)) 'line)
-;;    ((= c (char-code #\R)) 'routine)
-;;    (else (string->symbol (string-append "unknown-" (string c))))))
-
 (define (recv-description #!optional (port (current-input-port)))
   (let* ((name (recv-string port))
 	 (table (recv-int32 port))

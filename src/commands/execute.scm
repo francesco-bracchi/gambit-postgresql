@@ -97,6 +97,9 @@
      ((empty-query-response)
       (connection-status-set! (current-connection) 'idle)
       value)
+     
+     ((no-data)
+      (handle-next-message description value))
 
      ((ready-for-query status)
       (connection-status-set! (current-connection) status)
@@ -111,3 +114,5 @@
 
      ((data-row column row)
       (handle-next-message description (apply function value (map from-u8vector row description)))))))
+
+
