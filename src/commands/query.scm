@@ -17,8 +17,8 @@
 
 (define (connection-query sql
 			  #!key
-			  (initial-value #f)
-			  (reducer (lambda x #t))
+			  (initial-value '())
+			  (reducer (lambda (lst . vals) (cons vals lst)))
 			  (connection (current-connection)))
   (call-with-connection-port
    connection

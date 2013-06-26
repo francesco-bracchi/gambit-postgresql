@@ -51,8 +51,8 @@
 (define (connection-execute thing
 			    #!key
 			    (arguments '())
-			    (initial-value #f)
-			    (reducer (lambda x #t))
+			    (initial-value '())
+			    (reducer (lambda (lst . vals) (cons vals lst)))
 			    (maximum-result-rows 0)
 			    (connection
 			     (cond
