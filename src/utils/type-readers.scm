@@ -1,6 +1,11 @@
 (##namespace ("postgresql/utils/type-readers#"))
 
 (##include "~~lib/gambit#.scm")
+
+(declare (standard-bindings)
+	 (extended-bindings)
+	 (fixnum)
+	 (block))
 	      
 (define current-reader-table (make-parameter (make-table)))
 

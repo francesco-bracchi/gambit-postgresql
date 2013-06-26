@@ -26,7 +26,8 @@ IDEST		= 	$(LIBDIR)/$(LIBNAME)\#.scm \
 			$(LIBDIR)/exception\#.scm \
 			$(LIBDIR)/commands/query\#.scm \
 			$(LIBDIR)/commands/execute\#.scm \
-			$(LIBDIR)/commands/notification\#.scm
+			$(LIBDIR)/commands/notification\#.scm \
+			$(LIBDIR)/utils/type-readers\#.scm
 
 all: libdir
 

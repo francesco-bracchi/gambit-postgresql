@@ -2,6 +2,12 @@
 
 (##namespace ("postgresql/utils/queue#"))
 (##include "~~lib/gambit#.scm")
+
+(declare (standard-bindings)
+	 (extended-bindings)
+	 (fixnum)
+	 (block)
+	 (safe))
       
 (define (make-queue)
   (cons '() '()))

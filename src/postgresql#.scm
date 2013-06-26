@@ -1,9 +1,9 @@
 ;; external access to postgresql 
 
-(include "~~postgresql/connection#.scm")
-(include "~~postgresql/exception#.scm")
-(include "~~postgresql/commands/query#.scm")
-(include "~~postgresql/commands/execute#.scm")
-(include "~~postgresql/commands/notification#.scm")
-
+(include "connection#.scm")
+(include "exception#.scm")
+(include "commands/query#.scm")
+(include "commands/execute#.scm")
+(include "commands/notification#.scm")
+(include "utils/type-readers#.scm")
 	      

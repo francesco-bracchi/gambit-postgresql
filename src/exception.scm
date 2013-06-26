@@ -3,6 +3,11 @@
 
 (include "exception#.scm")
 
+(declare (standard-bindings)
+	 (extended-bindings)
+	 (fixnum)
+	 (block))
+
 (define-macro (define-standard-getters . as)
   (let ((symbol-append (lambda as (string->symbol (apply string-append (map symbol->string as))))))
     `(begin 

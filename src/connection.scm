@@ -1,6 +1,11 @@
 (##namespace ("postgresql/connection#"))
 (##include "~~/lib/gambit#.scm")
 
+(declare (standard-bindings)
+	 (extended-bindings)
+	 (fixnum)
+	 (block))
+
 (include "connection#.scm")
 (include "utils/queue#.scm")
 (include "messages/frontend#.scm")
