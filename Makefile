@@ -76,6 +76,11 @@ install: libdir $(INSTALLDIR)
 	@echo $(INSTALLDIR)
 	$(INSTALL) -r $(LIBDIR)/* $(INSTALLDIR)
 
+uninstall: 
+	@echo "uninstalling from:"
+	@echo $(INSTALLDIR)
+	-rm -r $(INSTALLDIR)
+
 repl: libdir
 	@echo "repl example running"
 	$(GSI) -:~~$(LIBNAME)=$(LIBDIR) $(LIBDIR)/$(LIBNAME) $(EXAMPLESDIR)/repl 
