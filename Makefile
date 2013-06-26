@@ -76,5 +76,15 @@ install: libdir $(INSTALLDIR)
 	$(INSTALL) -r $(LIBDIR)/* $(INSTALLDIR)
 
 repl: libdir
-	@echo "testing repl"
+	@echo "repl example running"
 	$(GSI) -:~~$(LIBNAME)=$(LIBDIR) $(LIBDIR)/$(LIBNAME) $(EXAMPLESDIR)/repl 
+
+
+notification: libdir
+	@echo " notification example running"
+	$(GSI) -:~~$(LIBNAME)=$(LIBDIR) $(LIBDIR)/$(LIBNAME) $(EXAMPLESDIR)/notification
+
+
+gsql: libdir
+	@echo "open gsi interpreter connected to a db"
+	$(GSI) -:~~$(LIBNAME)=$(LIBDIR) $(LIBDIR)/$(LIBNAME) -e "(include \"$(EXAMPLESDIR)/pg#.scm\")" -
