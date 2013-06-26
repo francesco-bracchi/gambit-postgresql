@@ -1,5 +1,10 @@
 (namespace 
  ("postgresql/messages/frontend#"
+
+  *message-writers*
+  frontend/name->code
+  frontend/lo
+
   send-message
   
   ;; message constructors

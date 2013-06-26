@@ -16,6 +16,7 @@
   backend/code->name
   backend/lo
   backend/hi
+  *message-readers*
   ))
 
 (##include "messages#.scm")
