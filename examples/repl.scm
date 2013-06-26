@@ -1,3 +1,7 @@
+;; # REPL
+
+;; Just a simple repl tool like psql, but simpler
+
 (include "~~postgresql/postgresql#.scm")
 
 (define (get-parameter name)

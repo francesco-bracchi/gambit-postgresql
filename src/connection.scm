@@ -23,7 +23,7 @@
 		 (server-address "localhost")
 		 (port-number 5432)
 		 (character-encoding 'UTF-8)
-		 (notice-handler (lambda (conn) (close-connection conn))))
+		 (notice-handler (lambda (conn values) 'ignore)))
   (let* ((port (open-database-port server-address port-number))
 	 (connection (make-connection 
 		      database

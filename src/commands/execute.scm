@@ -86,7 +86,11 @@
      ((portal-suspended)
       (send-message (execute (portal-id portal) maximum-result-rows))
       (handle-next-message description value))
-
+     
+     ((notice-response alist)
+      ((connection-notice-handler (current-connection)) (current-connection) alist)
+      (handle-next-message description value))
+     
      ((error-response fields)
       (raise (make-backend-exception (current-connection) fields)))
      
