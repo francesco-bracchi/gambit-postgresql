@@ -3,6 +3,7 @@
 
 (include "io#.scm")
 (include "messages#.scm")
+(include "../utils/type-readers#.scm")
 
 (define-tag-set frontend 
   (startup            #\s)
@@ -41,6 +42,7 @@
   (force-output port))
 
 (define (send-message message #!optional (port (current-output-port)))
+  ;; (pp `(SEND ,message))
   (parameterize
    ((current-output-port port))
    (if (eq? (message-name message) 'startup)
@@ -108,10 +110,9 @@
   (cond
    ((eq? arg '()) (send-int32 -1))
    (else 
-    ;; todo: use character encoding specified by the connection
-    (send-bytes  (call-with-output-u8vector
-		  (u8vector)
-		  (lambda (port) (write arg port)))))))
+    (let((bytes (data->u8vector arg)))
+      (send-int32 (u8vector-length bytes))
+      (send-bytes bytes)))))
 
 (define (all? t? ls) 
   (cond
@@ -132,7 +133,6 @@
 	(bin? (all? (lambda (x) (= x 1)) formats))
 	(format-len (cond (text? 0) (bin? 1) (else len)))
 	(format-codes (cond (text? '()) (bin? '()) (else formats)))
-
 	(rlen (length results))
 	(rtext? (all? (lambda (x) (= x 0)) results))
 	(rbin? (all? (lambda (x) (= x 1)) results))

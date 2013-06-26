@@ -37,11 +37,12 @@
 (define (data->u8vector data #!optional
 			(type (type-of data))
 			(table (current-writer-table)))
-  (let ((writer (get-writer type table)))
-    (if writer 
-	(with-output-to-u8vector (u8vector) writer)
-	data)))
-
+  (cond
+   ((eq? type 'byte-vector) data)
+   ((get-writer type table) =>
+    (with-output-to-u8vector (u8vector) (lambda () (writer data))))
+   (else
+    (with-output-to-u8vector (u8vector) (lambda () (write data))))))
 
 (define (read-text) (read-line (current-input-port) #f))
 
