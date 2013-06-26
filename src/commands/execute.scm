@@ -2,6 +2,8 @@
 
 (##include "~~lib/gambit#.scm")
 
+(include "execute#.scm")
+
 (include "../utils/queue#.scm")
 (include "../utils/type-readers#.scm")
 (include "../connection#.scm")
@@ -15,7 +17,6 @@
 	 (fixnum)
 	 (block))
 
-(include "execute#.scm")
   
 (define (connection-prepare sql-string
 			    #!key
@@ -118,8 +119,8 @@
 
 
 ;; alias
-(define prepare connection-prepare)
+(define postgresql/commands/execute#prepare connection-prepare)
 
-(define bind connection-bind)
+(define postgresql/commands/execute#bind connection-bind)
 
-(define execute connection-execute)
+(define postgresql/commands/execute#execute connection-execute)

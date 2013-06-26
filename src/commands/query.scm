@@ -73,4 +73,4 @@
      ((data-row column row)
       (handle-next-message description (apply reducer value (map from-u8vector row description)))))))
 
-(define query connection-query)
+(define postgresql/commands/query#query connection-query)

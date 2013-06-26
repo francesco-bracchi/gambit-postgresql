@@ -42,4 +42,4 @@
     (connection-parameter-set! key value)
     (handle-notification-message))))
 
-(define receive-notification connection-notification)
+(define postgresql/commands/notification#receive-notification connection-notification)
