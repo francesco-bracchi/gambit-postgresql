@@ -114,5 +114,5 @@
       (raise ex))
     (lambda () 
       (connection-execute (string-append "BEGIN"))
-      (fn)
+      (function)
       (connection-execute (string-append "COMMIT TRANSACTION"))))))

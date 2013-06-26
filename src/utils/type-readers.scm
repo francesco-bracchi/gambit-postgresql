@@ -48,7 +48,6 @@
 (define (read-number) (string->number (read-text)))
 
 (define (write-text txt)
-  (pp 'txt)
   (display txt))
 
 (set-reader! 'text read-text)
