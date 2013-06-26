@@ -98,7 +98,7 @@
        "SELECT typname, oid FROM pg_type"
        connection: connection
        initial-value: '()
-       function: (lambda (ass typname oid) (cons (cons (to-int oid) (to-symbol typname)) ass)))))))
+       reducer: (lambda (ass typname oid) (cons (cons (to-int oid) (to-symbol typname)) ass)))))))
 
 (define (connection-oid->name oid #!optional (connection (current-connection)))
   (let ((table (connection-oid-table connection)))

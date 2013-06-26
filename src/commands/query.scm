@@ -18,21 +18,21 @@
 (define (connection-query sql
 			  #!key
 			  (initial-value #f)
-			  (function (lambda x #t))
+			  (reducer (lambda x #t))
 			  (connection (current-connection)))
   (call-with-connection-port
    connection
    (lambda ()
      (send-message (query sql))
      (send-message (flush))
-     (handle-query-result initial-value function))))
+     (handle-query-result initial-value reducer))))
 
 (define (from-u8vector vect desc) 
   (let* ((oid (field-descriptor-type desc))
 	 (type (connection-oid->name oid)))
     (u8vector->data type vect)))
 
-(define (handle-query-result initial-value function)
+(define (handle-query-result initial-value reducer)
   (let handle-next-message ((description #f)
 			    (value initial-value))
     (recv-message
@@ -66,6 +66,6 @@
       (handle-next-message description value))
 
      ((data-row column row)
-      (handle-next-message description (apply function value (map from-u8vector row description)))))))
+      (handle-next-message description (apply reducer value (map from-u8vector row description)))))))
 
 

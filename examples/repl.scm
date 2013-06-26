@@ -17,7 +17,7 @@
 	 (lambda () 
 	   (connection-execute 
 	    line
-	    function: (lambda (state . whatever)  (pp whatever) #f))
+	    reducer: (lambda (state . whatever)  (pp whatever) #f))
 	   (pp `(<= ,(connection-status (current-connection))))
 	   (run))))))
 

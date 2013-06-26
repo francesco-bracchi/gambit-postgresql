@@ -52,7 +52,7 @@
 			    #!key
 			    (arguments '())
 			    (initial-value #f)
-			    (function (lambda x #t))
+			    (reducer (lambda x #t))
 			    (maximum-result-rows 0)
 			    (connection
 			     (cond
@@ -66,14 +66,14 @@
        (send-message (describe 'portal (portal-id portal)))
        (send-message (execute (portal-id portal) maximum-result-rows))
        (send-message (flush))
-       (handle-execute-result portal initial-value function maximum-result-rows)))))
+       (handle-execute-result portal initial-value reducer maximum-result-rows)))))
 
 (define (from-u8vector vect desc) 
   (let* ((oid (field-descriptor-type desc))
 	 (type (connection-oid->name oid)))
     (u8vector->data type vect)))
 
-(define (handle-execute-result portal initial-value function maximum-result-rows)
+(define (handle-execute-result portal initial-value reducer maximum-result-rows)
   (let handle-next-message ((description #f)
 			    (value initial-value))
     (recv-message     
@@ -117,6 +117,6 @@
       (handle-next-message description value))
 
      ((data-row column row)
-      (handle-next-message description (apply function value (map from-u8vector row description)))))))
+      (handle-next-message description (apply reducer value (map from-u8vector row description)))))))
 
 
