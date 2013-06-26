@@ -15,7 +15,7 @@
 	(with-exception-catcher
 	 (lambda (ex) (pp ex) (run))
 	 (lambda () 
-	   (connection-execute 
+	   (execute 
 	    line
 	    reducer: (lambda (state . whatever)  (pp whatever) #f))
 	   (pp `(<= ,(connection-status (current-connection))))

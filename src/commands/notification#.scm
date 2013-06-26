@@ -1,3 +1,5 @@
 (##namespace 
  ("postgresql/commands/notification#"
-  connection-notification))
+  connection-notification
+  recv-notification
+  ))

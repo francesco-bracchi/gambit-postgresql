@@ -10,6 +10,11 @@
 (include "../messages/frontend#.scm")
 (include "../messages/backend#.scm")
 
+(declare (standard-bindings)
+	 (extended-bindings)
+	 (fixnum)
+	 (block))
+
 (define (connection-notification #!optional (connection (current-connection)))
   (let ((queue (connection-notifications connection)))
     (if (empty? queue)
@@ -36,3 +41,5 @@
    ((parameter-status key value)
     (connection-parameter-set! key value)
     (handle-notification-message))))
+
+(define receive-notification connection-notification)

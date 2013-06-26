@@ -1,6 +1,11 @@
 (##namespace ("postgreql/messages/io#"))
 (##include "~~lib/gambit#.scm")
 
+(declare (standard-bindings)
+	 (extended-bindings)
+	 (fixnum)
+	 (block))
+
 (define (send-int byte-length value #!optional (port (current-output-port)))
   (declare (fixnum = <= - + * quotient remainder bitwise-and arithmetic-shift)
            (not safe))

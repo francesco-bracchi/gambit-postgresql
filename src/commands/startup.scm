@@ -13,6 +13,11 @@
 (include "../messages/frontend#.scm")
 (include "../messages/backend#.scm")
 
+(declare (standard-bindings)
+	 (extended-bindings)
+	 (fixnum)
+	 (block))
+
 (define request-ok 0)
 
 (define request-clear-password 3)

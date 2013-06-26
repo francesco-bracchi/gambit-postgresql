@@ -15,6 +15,11 @@
 (include "../messages/frontend#.scm")
 (include "../messages/backend#.scm")
 
+(declare (standard-bindings)
+	 (extended-bindings)
+	 (fixnum)
+	 (block))
+
 (define (connection-query sql
 			  #!key
 			  (initial-value '())
@@ -68,4 +73,4 @@
      ((data-row column row)
       (handle-next-message description (apply reducer value (map from-u8vector row description)))))))
 
-
+(define query connection-query)

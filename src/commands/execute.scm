@@ -10,15 +10,12 @@
 (include "../messages/frontend#.scm")
 (include "../messages/backend#.scm")
 
-(define-structure statement
-  id: d0fa9f52-2799-4351-9695-4152f4fcc50e
-  (id read-only:)
-  (connection read-only: unprintable:))
+(declare (standard-bindings)
+	 (extended-bindings)
+	 (fixnum)
+	 (block))
 
-(define-structure portal
-  id: fab9386e-a924-455d-b3b7-181afc2e3bcd
-  (id read-only:)
-  (connection read-only: unprintable:))
+(include "execute#.scm")
   
 (define (connection-prepare sql-string
 			    #!key
@@ -120,3 +117,9 @@
       (handle-next-message description (apply reducer value (map from-u8vector row description)))))))
 
 
+;; alias
+(define prepare connection-prepare)
+
+(define bind connection-bind)
+
+(define execute connection-execute)

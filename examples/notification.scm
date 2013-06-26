@@ -15,12 +15,12 @@
 (define *payload* "'ping'")
 
 (define (wait)
-  (connection-query (string-append "LISTEN " *channel*))
-  (pp `(received ,(connection-notification)))
+  (query (string-append "LISTEN " *channel*))
+  (pp `(received ,(receive-notification)))
   (exit))
 
 (define (send)
-  (connection-query (string-append "NOTIFY " *channel* "," *payload*)))
+  (query (string-append "NOTIFY " *channel* "," *payload*)))
 
 (define (main)
   (thread-start!

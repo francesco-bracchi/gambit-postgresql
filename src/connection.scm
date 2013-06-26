@@ -1,17 +1,17 @@
 (##namespace ("postgresql/connection#"))
 (##include "~~/lib/gambit#.scm")
 
-(declare (standard-bindings)
-	 (extended-bindings)
-	 (fixnum)
-	 (block))
-
 (include "connection#.scm")
 (include "utils/queue#.scm")
 (include "messages/frontend#.scm")
 (include "messages/backend#.scm")
 (include "commands/execute#.scm")
 (include "commands/startup#.scm")
+
+(declare (standard-bindings)
+	 (extended-bindings)
+	 (fixnum)
+	 (block))
 
 (define current-connection (make-parameter #f))
 

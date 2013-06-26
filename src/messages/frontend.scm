@@ -5,6 +5,11 @@
 (include "messages#.scm")
 (include "../utils/type-readers#.scm")
 
+(declare (standard-bindings)
+	 (extended-bindings)
+	 (fixnum)
+	 (block))
+
 (define-tag-set frontend 
   (startup            #\s)
   (bind               #\B)

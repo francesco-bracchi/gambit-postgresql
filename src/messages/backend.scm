@@ -7,6 +7,11 @@
 ;(include "messages#.scm")
 (include "backend#.scm")
 
+(declare (standard-bindings)
+	 (extended-bindings)
+	 (fixnum)
+	 (block))
+
 (define-tag-set backend
   (authentication          #\R)
   (backend-key-data        #\K)
