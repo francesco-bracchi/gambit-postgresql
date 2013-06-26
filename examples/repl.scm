@@ -46,7 +46,6 @@
 (define (main)
   (with-exception-catcher
    (lambda (ex)
-     (pp (wrong-number-of-arguments-exception-procedure ex))
      (pp ex)
      (for-each println help))
    repl))
