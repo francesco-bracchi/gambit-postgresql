@@ -77,4 +77,4 @@ install: libdir $(INSTALLDIR)
 
 repl: libdir
 	@echo "testing repl"
-	$(GSI) -:~~$(LIBNAME)=$(LIBDIR) $(LIBDIR)/$(LIBNAME) - # $(EXAMPLESDIR)/repl
+	$(GSI) -:~~$(LIBNAME)=$(LIBDIR) $(LIBDIR)/$(LIBNAME) $(EXAMPLESDIR)/repl 

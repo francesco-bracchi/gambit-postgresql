@@ -41,7 +41,6 @@
   (force-output port))
 
 (define (send-message message #!optional (port (current-output-port)))
-  (pp `(SEND (,(message-name message) ,@(message-values message))))
   (parameterize
    ((current-output-port port))
    (if (eq? (message-name message) 'startup)
@@ -125,6 +124,7 @@
 ;; results is a list of binary/text 
 ;; (bind "portal123" "statement456" '((#u8(10 20 30 40 ...) . 1) ...) '(0 1 1 0 1))
 ;; let arguments be u8vector (it's flow level that should handle this)
+
 (define-message-writer (bind portal source arguments results)
   (let*((len (length arguments))
 	(formats (map format arguments))
@@ -177,12 +177,14 @@
 (define-message-writer (flush)
   'flush)
 
-(define-message-writer (function-call fid arguments result)
-  (send-int 4 fid)
-  (send-bindings-formats (map bindings-format arguments))
-  (send-int 2 (length arguments))
-  (send-bindings-values (map bindings-value arguments))
-  (send-int (bindings-format result)))
+;; this is not implemented yet, TBD
+;;
+;; (define-message-writer (function-call fid arguments result)
+;;   (send-int 4 fid)
+;;   (send-bindings-formats (map bindings-format arguments))
+;;   (send-int 2 (length arguments))
+;;   (send-bindings-values (map bindings-value arguments))
+;;   (send-int (bindings-format result)))
 
 (define-message-writer (parse name query parameter-types)
   (send-string name)

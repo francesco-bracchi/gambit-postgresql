@@ -209,7 +209,6 @@
     (list pairs)))
 
 (define-message-reader (notification-response length)
-  (pp `(NOTIFICATION))
   (let* ((pid (recv-int32))
 	 (channel (recv-string))
 	 (payload (recv-string)))

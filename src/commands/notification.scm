@@ -28,14 +28,11 @@
     (handle-notification-message))
    
    ((notification-response pid channel payload)
-    (pp `(NOTIFICATION RESPONSE))
     (make-notification pid channel payload))
    
    ((error-response fields)
-    (pp `(ERROR RESPONSE))
     (raise (make-backend-exception (current-connection) fields)))
    
    ((parameter-status key value)
-    (pp `(PARAMETER STATUS))
     (connection-parameter-set! key value)
     (handle-notification-message))))

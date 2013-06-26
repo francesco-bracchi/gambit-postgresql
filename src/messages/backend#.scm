@@ -39,7 +39,6 @@
 	(c (gensym 'code)))
     `(let* ((,m ,message)
 	    (,c (message-code ,m)))
-       (pp (list 'RECEIVE ,m))
        (cond
 	,@(map (lambda (action)
 		 (let* ((head (car action))
