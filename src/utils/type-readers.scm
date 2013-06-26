@@ -39,8 +39,8 @@
 			(table (current-writer-table)))
   (cond
    ((eq? type 'byte-vector) data)
-   ((get-writer type table) =>
-    (with-output-to-u8vector (u8vector) (lambda () (writer data))))
+   ((get-writer type table) => 
+    (lambda (writer) (with-output-to-u8vector (u8vector) (lambda () (writer data)))))
    (else
     (with-output-to-u8vector (u8vector) (lambda () (write data))))))
 

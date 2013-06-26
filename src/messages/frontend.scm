@@ -100,7 +100,6 @@
    ((eq? t 'statement) (send-char #\S))
    (else (error "unkown type"))))
 
-
 (define (format arg) 
   (cond
    ((eq? (u8vector? arg) 1))
