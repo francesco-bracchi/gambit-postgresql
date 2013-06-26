@@ -31,13 +31,7 @@
    run))
 
 (define help
-  `("gsi ~~postgresql/postgresql repl <options>"
-    "options can be: "
-    "-d <database> "
-    "-u <username> "
-    "-x <password> "
-    "-p <port number> "
-    "-s <database>"))
+  `("gsi ~~postgresql/postgresql repl"))
 
 (define (println s)
   (display s)
